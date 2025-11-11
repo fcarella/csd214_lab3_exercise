@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
+
+    <!-- Your existing MySQL persistence unit -->
+    <persistence-unit name="default" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <properties>
+            <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://localhost:3333/bookstore"/>
+            <property name="jakarta.persistence.jdbc.user" value="root"/>
+            <property name="jakarta.persistence.jdbc.password" value="itstudies12345"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
+<!--            <property name="hibernate.show_sql" value="true"/>-->
+<!--            <property name="hibernate.format_sql" value="true"/>-->
+        </properties>
+    </persistence-unit>
+
+    <!-- ADD THIS NEW H2 PERSISTENCE UNIT -->
+    <persistence-unit name="h2" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <properties>
+            <!-- H2 Driver -->
+            <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+            <!-- In-memory database URL. "mem:testdb" creates a private in-memory DB. -->
+            <!-- DB_CLOSE_DELAY=-1 prevents the DB from being cleared as long as the VM is alive. -->
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1"/>
+            <property name="jakarta.persistence.jdbc.user" value="sa"/>
+            <property name="jakarta.persistence.jdbc.password" value=""/>
+
+            <!-- H2 Dialect for Hibernate -->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+
+            <!-- Create and drop the schema on startup/shutdown. Perfect for testing. -->
+            <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+
+            <!-- Optional: Show SQL for debugging -->
+<!--            <property name="hibernate.show_sql" value="true"/>-->
+<!--            <property name="hibernate.format_sql" value="true"/>-->
+        </properties>
+    </persistence-unit>
+
+</persistence>
+<!--<?xml version="1.0" encoding="UTF-8" standalone="yes"?>-->
+<!--&lt;!&ndash; See https://www.theserverside.com/blog/Coffee-Talk-Java-News-Stories-and-Opinions/The-JPA-and-Hibernate-CRUD-operations-example&ndash;&gt;-->
+<!--<persistence version="3.0" xmlns="https://jakarta.ee/xml/ns/persistence"-->
+<!--             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"-->
+<!--             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence-->
+<!--            https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">-->
+
+<!--  <persistence-unit name="default">-->
+<!--    <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>-->
+<!--    <properties>-->
+<!--      <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver" />-->
+<!--      <property name="jakarta.persistence.jdbc.url"    value="jdbc:mysql://localhost:3307/bookstore" />-->
+<!--      <property name="jakarta.persistence.jdbc.user"   value="root" />-->
+<!--      <property name="jakarta.persistence.jdbc.password" value="itstudies12345" />-->
+<!--      <property name="jakarta.persistence.schema-generation.database.action" value="drop-and-create" />-->
+<!--&lt;!&ndash;      <property name="hibernate.show_sql"    value="true" />&ndash;&gt;-->
+<!--&lt;!&ndash;      <property name="hibernate.format_sql"  value="true" />&ndash;&gt;-->
+<!--    </properties>-->
+<!--  </persistence-unit>-->
+<!--</persistence>-->

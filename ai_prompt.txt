@@ -1,0 +1,1599 @@
+Analyze the following code from my project. Here is the complete context with all relevant files:
+
+--- FILE: .files2ignore ---
+```
+.git/
+volumes/
+.mvn/
+
+*.json
+
+# Vite / NPM
+node_modules/
+dist/
+.vite/
+npm-debug.log*
+
+# IntelliJ IDEA files
+.idea/
+*.iml
+out/
+
+# Visual Studio Code files
+.vscode/
+
+# Maven build output
+target/
+mvnw
+mvnw.cmd
+
+# Log files
+*.log
+
+# OS files
+.DS_Store
+
+# Binary and non-code files
+*.png
+*.gif
+*.jpg
+*.jpeg
+*.bmp
+*.svg
+*.ico
+*.pdf
+*.zip
+*.jar
+*.class
+
+```
+
+--- FILE: .gitignore ---
+```
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### IntelliJ IDEA ###
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/libraries/
+*.iws
+*.iml
+*.ipr
+
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store
+```
+
+--- FILE: docker-compose.yml ---
+```
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0 # You can specify a different version if needed
+    environment:
+      MYSQL_ROOT_PASSWORD: itstudies12345 # Replace with a strong password
+      MYSQL_DATABASE: csd214-lab0 # Replace with your desired database name
+      MYSQL_USER: csd214 # Replace with your desired username
+      MYSQL_PASSWORD: itstudies12345 # Replace with a strong password
+    ports:
+      - "3333:3306" # Maps port 3333 on your host to port 3306 in the container
+    volumes:
+      # - db_data:/var/lib/mysql # Persists data to a named volume
+      - ./volumes/mysql:/var/lib/mysql # persists data to folder in the current folder
+      # You can also mount a custom MySQL configuration file if needed:
+      # - ./my.cnf:/etc/mysql/my.cnf
+    restart: always
+
+volumes:
+  db_data: # Define the named volume
+
+```
+
+--- FILE: pom.xml ---
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>csd214</groupId>
+    <artifactId>lab3_exercise</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>23</maven.compiler.source>
+        <maven.compiler.target>23</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Added property for JUnit version -->
+        <junit.version>5.10.2</junit.version>
+    </properties>
+
+    <!-- =================================================================== -->
+    <!--  1. JUNIT BILL OF MATERIALS (BOM) FOR VERSION MANAGEMENT            -->
+    <!--  This section ensures all JUnit 5 modules have the same version.    -->
+    <!-- =================================================================== -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+
+    <dependencies>
+        <!-- Your Existing Dependencies -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>6.6.1.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>8.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.javafaker</groupId>
+            <artifactId>javafaker</artifactId>
+            <version>1.0.2</version>
+        </dependency>
+
+        <!-- =================================================================== -->
+        <!--  2. JUNIT 5 DEPENDENCIES FOR WRITING & RUNNING TESTS                -->
+        <!-- =================================================================== -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <!-- Version is managed by the BOM -->
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <!-- Version is managed by the BOM -->
+            <scope>test</scope>
+        </dependency>
+        <!-- Add this dependency for the H2 In-Memory Database -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>2.2.224</version>
+            <!-- Use 'test' scope if only for testing, or 'runtime' if used by the app -->
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+
+    <!-- =================================================================== -->
+    <!--  3. MAVEN SUREFIRE PLUGIN TO EXECUTE THE TESTS                      -->
+    <!-- =================================================================== -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
+```
+
+--- FILE: src\main\java\csd214_fall2025\App.java ---
+```
+package csd214_fall2025;
+
+import csd214_fall2025.pojos.Editable;
+import csd214_fall2025.pojos.SaleableItem;
+
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+public class App {
+    private final String menu = "\n***********************\n"
+            + " 1. Add Items\n"
+            + " 2. Edit Items\n"
+            + " 3. Delete Items\n"
+            + " 4. Sell item(s)\n"
+            + " 5. List items\n"
+            + "99. Quit\n"
+            + "***********************\n"
+            + "Enter choice: ";
+    //private final SaleableItem[] saleableItems = new SaleableItem[MAX_ITEMS];
+//    private final ArrayList<SaleableItem> saleableItems = new ArrayList<>();
+    private final int currentItem = 0;
+
+    private Scanner input;
+    private final PrintStream out;
+
+    // Default constructor for normal execution
+    public App() {
+        this(System.in, System.out);
+    }
+    // Constructor for testing
+    public App(InputStream in, PrintStream out) {
+        this.input = new Scanner(in);
+        this.out = out;
+    }
+
+    public void run(){};
+    public boolean findItemExists(SaleableItem item){return false;};
+    public SaleableItem findItem(SaleableItem item){return null;}
+    public void editItem(){}
+    public void editItem(Editable item){}
+    public void deleteItem(){}
+    public void populate(){}
+    public void listAny(){}
+    public SaleableItem getItem(SaleableItem item){return null;}
+    public void sellItem(){}
+    public void listI(Object items){}
+    public void addItem(){}
+    public void addItem(SaleableItem item){}
+
+}
+
+```
+
+--- FILE: src\main\java\csd214_fall2025\entities\BookEntity.java ---
+```
+package csd214_fall2025.entities;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+
+import java.util.Objects;
+
+@Entity
+public class BookEntity extends PublicationEntity {
+    @Column(name = "author")
+    private String author;
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
+    }
+
+    public BookEntity() {
+    }
+
+    public BookEntity(String title, double price, int copies, String isbn_10, String description) {
+        super(title, price, copies, isbn_10, description);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof BookEntity that)) return false;
+        if (!super.equals(o)) return false;
+        return Objects.equals(getAuthor(), that.getAuthor());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getAuthor());
+    }
+
+    @Override
+    public void edit() {
+        System.out.println("--- Editing Book " + (getTitle() != null ? "'" + getTitle() + "'" : "") + (getId() != null ? " (ID: " + getId() + ")" : "") + " ---");
+        System.out.print("Enter new title (current: '" + (getTitle() == null ? "" : getTitle()) + "'): ");
+        setTitle(super.getInput(getTitle() == null ? "" : getTitle()));
+
+        System.out.print("Enter new author (current: '" + (this.author == null ? "" : this.author) + "'): ");
+        setAuthor(super.getInput(this.author == null ? "" : this.author));
+
+        System.out.print("Enter new price (current: " + getPrice() + "): ");
+        setPrice(super.getInput(getPrice()));
+
+        System.out.print("Enter new copies (current: " + getCopies() + "): ");
+        setCopies(super.getInput(getCopies()));
+        System.out.println("Book updated.");
+    }
+
+
+    @Override
+    public void initialize() {
+        System.out.println("--- Initializing New Book ---");
+        // ID is typically set by persistence layer or later, not usually during manual initialize
+        // If you want to set ID here:
+        // System.out.print("Enter ID (long): ");
+        // setId(super.getInput(0L)); // Example default for ID
+
+        System.out.print("Enter title: ");
+        setTitle(super.getInput("")); // Default empty string
+
+        System.out.print("Enter author: ");
+        setAuthor(super.getInput("")); // Default empty string
+
+        System.out.print("Enter price: ");
+        setPrice(super.getInput(0.0)); // Default 0.0
+
+        System.out.print("Enter copies: ");
+        setCopies(super.getInput(0)); // Default 0
+        System.out.println("Book initialized.");
+    }
+
+    @Override
+    public void sellItem() {
+        if (getCopies() > 0) {
+            setCopies(getCopies() - 1);
+            System.out.println("Sold Book: '" + getTitle() + "' by " + author + ". Copies left: " + getCopies());
+        } else {
+            System.out.println("Book '" + getTitle() + "' is out of stock.");
+        }
+    }
+    @Override
+    public String toString() {
+        return "BookEntity{" +
+                "author='" + author + '\'' +
+                "} " + super.toString();
+    }
+
+}
+```
+
+--- FILE: src\main\java\csd214_fall2025\entities\ProductEntity.java ---
+```
+package csd214_fall2025.entities;
+
+import csd214_fall2025.pojos.Editable;
+import csd214_fall2025.pojos.SaleableItem;
+import jakarta.persistence.*;
+
+import java.io.Serializable;
+import java.util.Objects;
+
+@Entity
+@Table(name = "product_entity")
+public abstract class ProductEntity extends Editable implements Serializable, SaleableItem {
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @Column(name = "id", nullable = false)
+    private Long id;
+
+    @Column(name = "product_id")
+    private String productId;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getProductId() {
+        return productId;
+    }
+
+    public void setProductId(String productId) {
+        this.productId = productId;
+    }
+
+    public ProductEntity() {
+    }
+
+    public ProductEntity(String productId) {
+        this.productId = productId;
+    }
+
+    @Override
+    public String toString() {
+        return "ProductEntity{" +
+                "id=" + id +
+                ", productId='" + productId + '\'' +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof ProductEntity that)) return false;
+        return Objects.equals(getId(), that.getId()) && Objects.equals(getProductId(), that.getProductId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId(), getProductId());
+    }
+}
+```
+
+--- FILE: src\main\java\csd214_fall2025\entities\PublicationEntity.java ---
+```
+package csd214_fall2025.entities;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+
+@Entity
+public abstract class PublicationEntity extends ProductEntity {
+    @Column(name = "title")
+    private String title;
+
+    @Column(name = "price", nullable = false)
+    private double price;
+
+    @Column(name = "copies", nullable = false)
+    private int copies;
+
+    @Column(name = "isbn_10")
+    private String isbn_10;
+
+    @Column(name = "description")
+    private String description;
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    public int getCopies() {
+        return copies;
+    }
+
+    public void setCopies(int copies) {
+        this.copies = copies;
+    }
+
+    public String getIsbn_10() {
+        return isbn_10;
+    }
+
+    public void setIsbn_10(String isbn_10) {
+        this.isbn_10 = isbn_10;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public PublicationEntity() {
+    }
+
+    public PublicationEntity(String title, double price, int copies, String isbn_10, String description) {
+        this.title = title;
+        this.price = price;
+        this.copies = copies;
+        this.isbn_10 = isbn_10;
+        this.description = description;
+    }
+
+    @Override
+    public String toString() {
+        return "PublicationEntity{" +
+                "title='" + title + '\'' +
+                ", price=" + price +
+                ", copies=" + copies +
+                ", isbn_10='" + isbn_10 + '\'' +
+                ", description='" + description + '\'' +
+                "} " + super.toString();
+    }
+
+}
+```
+
+--- FILE: src\main\java\csd214_fall2025\Main.java ---
+```
+package csd214_fall2025;
+
+//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
+// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+public class Main {
+    public static void main(String[] args) {
+        new App().run();
+    }
+}
+```
+
+--- FILE: src\main\java\csd214_fall2025\pojos\Book.java ---
+```
+package csd214_fall2025.pojos;
+
+import java.util.Objects;
+
+/**
+ * DTO for {@link csd214_fall2025.entities.BookEntity}
+ */
+public class Book extends Publication {
+
+    private String author;
+
+
+    @Override
+    public String toString() {
+        return "Book{" +
+                "author='" + author + '\'' +
+                "} " + super.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Book book)) return false;
+        if (!super.equals(o)) return false;
+        return Objects.equals(getAuthor(), book.getAuthor());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getAuthor());
+    }
+
+    public Book() {
+
+    }
+    public Book(String author) {
+        this.author = author;
+    }
+
+    public Book(String title, double price, int copies, String isbn_10, String description, String author) {
+        super(title, price, copies, isbn_10, description);
+        this.author = author;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
+    }
+
+    @Override
+    public void edit() {
+        System.out.println("Edit Title (" + getTitle() + " [enter for no changes])");
+        setTitle(getInput(getTitle()));
+        System.out.println("Edit Author (" + getAuthor() + " [enter for no changes])");
+        setAuthor(getInput(getAuthor()));
+        System.out.println("Edit copies (" + getCopies() + " [enter for no changes])");
+        setCopies(getInput(getCopies()));
+        System.out.println("Edit price (" + getPrice() + " [enter for no changes])");
+        setPrice(getInput(getPrice()));
+    }
+
+    @Override
+    public void initialize() {
+        System.out.println("Enter Title:");
+        setTitle(getInput("no title"));
+        System.out.println("Enter Author:");
+        setAuthor(getInput("no author"));
+        System.out.println("Enter copies:");
+        setCopies(getInput(0));
+        System.out.println("Enter price:");
+        setPrice(getInput(0.0d));
+
+    }
+
+    //    @Override
+//    public String toString() {
+//        String format="Author: %-20s";
+//        return super.toString() + " " + String.format(format, getAuthor());
+//    }
+
+}
+
+```
+
+--- FILE: src\main\java\csd214_fall2025\pojos\CashTill.java ---
+```
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package csd214_fall2025.pojos;
+
+
+/**
+ *
+ * @author fcarella
+ */
+public class CashTill {
+
+    private double runningTotal;
+
+    CashTill() {
+        runningTotal = 0;
+    }
+
+    public void sellItem(SaleableItem saleableItem) {
+        runningTotal = runningTotal + saleableItem.getPrice();
+        saleableItem.sellItem();
+        System.out.println("Sold " + saleableItem + " @ "
+                + saleableItem.getPrice() + "\nSubtotal = "
+                + runningTotal);
+    }
+
+    public void showTotal() {
+        System.out.println("GRAND TOTAL: " + runningTotal);
+    }
+}
+
+```
+
+--- FILE: src\main\java\csd214_fall2025\pojos\Editable.java ---
+```
+package csd214_fall2025.pojos;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.Serializable;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Scanner;
+
+/**
+ * @author fcarella
+ */
+
+
+public abstract class Editable implements Serializable, SaleableItem {
+//    private Long id;
+
+
+    public Scanner input = new Scanner(System.in);
+    
+    public abstract void edit();
+    public abstract void initialize();
+    // setInput, setOutput are used when unit testing
+    // see https://stackoverflow.com/questions/1647907/junit-how-to-simulate-system-in-testing
+    public void setSystemInput(ByteArrayInputStream testIn){
+        System.setIn(testIn);
+        input=new Scanner(System.in);
+    }
+    public void setSystemOutput(ByteArrayOutputStream testOut){
+        System.setOut(new PrintStream(testOut));
+    }
+
+//    public Long getId() {
+//        return id;
+//    }
+//
+//    public void setId(Long id) {
+//        this.id = id;
+//    }
+
+
+    public String getInput(String s) {
+        String ss = input.nextLine();
+        if (ss.trim().isEmpty()) {
+            return s;
+        }
+        Scanner in2 = new Scanner(ss);
+        return in2.nextLine();
+    }
+
+    public int getInput(int i) {
+        String s = input.nextLine();
+        if (s.trim().isEmpty()) {
+            return i;
+        }
+        Scanner in2 = new Scanner(s);
+        return in2.nextInt();
+    }
+
+    public double getInput(double i) {
+        String s = input.nextLine();
+        if (s.trim().isEmpty()) {
+            return i;
+        }
+        Scanner in2 = new Scanner(s);
+        return in2.nextDouble();
+    }
+    public boolean getInput(boolean b) {
+        String s = input.nextLine();
+        if (s.trim().isEmpty()) {
+            return b;
+        }
+        Scanner in2 = new Scanner(s);
+        return in2.nextBoolean();
+    }
+
+    public Date getInput(Date date) {
+        String s = input.nextLine();
+        if (s.trim().isEmpty()) {
+            return date;
+        }
+        Scanner in2 = new Scanner(s);
+//        String dateInString = "7-Jun-2013";
+        String dateInString = in2.nextLine();
+        // see https://www.baeldung.com/java-string-to-date
+        SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
+        Date d;
+        try {
+            d = formatter.parse(dateInString);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+        return d;
+    }
+    public LocalDate getInput(LocalDate date) {
+        String s = input.nextLine();
+        if (s.trim().isEmpty()) {
+            return date;
+        }
+        Scanner in2 = new Scanner(s);
+//        String dateInString = "7-Jun-2013";
+        String dateInString = in2.nextLine();
+        // see https://www.baeldung.com/java-string-to-date
+//        SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
+        LocalDate d;
+        try {
+            d = LocalDate.parse(s, DateTimeFormatter.ofPattern("dd-MMM-yyyy"));
+        } catch (DateTimeParseException e) {
+            throw e;
+        }
+        return d;
+    }
+
+    @Override
+    public String toString() {
+        return "Editable{" +
+//                "id=" + id +
+                '}';
+    }
+}
+```
+
+--- FILE: src\main\java\csd214_fall2025\pojos\Magazine.java ---
+```
+package csd214_fall2025.pojos;
+
+import java.time.LocalDate;
+import java.util.Objects;
+
+/**
+ * @author fcarella
+ */
+
+public class Magazine extends Publication {
+
+    private int orderQty;
+    private LocalDate  currIssue;
+
+    public int getOrderQty() {
+        return orderQty;
+    }
+
+    public void setOrderQty(int orderQty) {
+        this.orderQty = orderQty;
+    }
+
+    public LocalDate getCurrIssue() {
+        return currIssue;
+    }
+
+    public void setCurrIssue(LocalDate currIssue) {
+        this.currIssue = currIssue;
+    }
+
+    public Magazine(String title, double price, int copies, String isbn_10, String description, int orderQty, LocalDate currIssue) {
+        super(title, price, copies, isbn_10, description);
+        this.orderQty = orderQty;
+        this.currIssue = currIssue;
+    }
+
+    public Magazine() {
+    }
+
+
+    @Override
+    public void edit() {
+        System.out.println("Edit Title (" + getTitle() + " [enter for no changes])");
+        setTitle(getInput(getTitle()));
+        System.out.println("Edit copies (" + getCopies() + " [enter for no changes])");
+        setCopies(getInput(getCopies()));
+        System.out.println("Edit price (" + getPrice() + " [enter for no changes])");
+        setPrice(getInput(getPrice()));
+        System.out.println("Edit Order Quantity (" + getOrderQty() + " [enter for no changes])");
+        setOrderQty(getInput(getOrderQty()));
+        System.out.println("Edit Current Issue (" + getCurrIssue() + " in \"dd-MMM-yyyy\" format [enter for no changes])");
+        setCurrIssue(getInput(getCurrIssue()));
+    }
+
+    @Override
+    public void initialize() {
+        System.out.println("Enter Title:");
+        setTitle(getInput("no title"));
+        System.out.println("Enter copies:");
+        setCopies(getInput(0));
+        System.out.println("Enter price:");
+        setPrice(getInput(0.0d));
+        System.out.println("Enter Order Quantity:");
+        setOrderQty(getInput(0));
+        System.out.println("Enter Current Issue:");
+        setCurrIssue(getInput(LocalDate.now()));
+    }
+
+    @Override
+    public String toString() {
+        String format="Order Qty: %-20s Current Issue: %-20s";
+        return super.toString() + " " + String.format(format, getOrderQty(), getCurrIssue());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        Magazine magazine = (Magazine) o;
+        return Objects.equals(orderQty, magazine.orderQty) && Objects.equals(currIssue, magazine.currIssue);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), orderQty, currIssue);
+    }
+}
+```
+
+--- FILE: src\main\java\csd214_fall2025\pojos\Product.java ---
+```
+package csd214_fall2025.pojos;
+
+import java.io.Serializable;
+import java.util.Objects;
+
+
+/**
+ * DTO for {@link csd214.bookstore.f25.entities.ProductEntity}
+ */
+/**
+ * DTO for {@link csd214_fall2025.entities.ProductEntity}
+ */
+public abstract class Product extends Editable implements Serializable, SaleableItem {
+    private String productId;
+
+    public Product(String productId) {
+        this.productId = productId;
+    }
+
+    public Product() {
+    }
+
+    public String getProductId() {
+        return productId;
+    }
+
+    public void setProductId(String productId) {
+        this.productId = productId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Product product)) return false;
+        return Objects.equals(getProductId(), product.getProductId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getProductId());
+    }
+
+    @Override
+    public String toString() {
+        return "Product{" +
+                "productId='" + productId + '\'' +
+                "} " + super.toString();
+    }
+}
+
+```
+
+--- FILE: src\main\java\csd214_fall2025\pojos\Publication.java ---
+```
+package csd214_fall2025.pojos;
+
+import java.util.Objects;
+
+/**
+ * @author fcarella
+ */
+
+/**
+ * DTO for {@link csd214.bookstore.f25.entities.PublicationEntity}
+ */
+/**
+ * DTO for {@link csd214_fall2025.entities.PublicationEntity}
+ */
+public abstract class Publication extends Product {
+    private String title;
+    private double price;
+    private int copies;
+    private String isbn_10;
+    private String description;
+
+
+    public Publication(String title, double price, int copies, String isbn_10, String description) {
+        this.title = title;
+        this.price = price;
+        this.copies = copies;
+        this.isbn_10 = isbn_10;
+        this.description = description;
+    }
+
+    public Publication() {
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Publication that)) return false;
+        if (!super.equals(o)) return false;
+        return Double.compare(getPrice(), that.getPrice()) == 0 && getCopies() == that.getCopies() && Objects.equals(getTitle(), that.getTitle()) && Objects.equals(getIsbn_10(), that.getIsbn_10()) && Objects.equals(getDescription(), that.getDescription());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getTitle(), getPrice(), getCopies(), getIsbn_10(), getDescription());
+    }
+
+    @Override
+    public String toString() {
+        return "Publication{" +
+                "title='" + title + '\'' +
+                ", price=" + price +
+                ", copies=" + copies +
+                ", isbn_10='" + isbn_10 + '\'' +
+                ", description='" + description + '\'' +
+                "} " + super.toString();
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getIsbn_10() {
+        return isbn_10;
+    }
+
+    public void setIsbn_10(String isbn_10) {
+        this.isbn_10 = isbn_10;
+    }
+
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    public int getCopies() {
+        return copies;
+    }
+
+    public void setCopies(int copies) {
+        this.copies = copies;
+    }
+
+    @Override
+    public void sellItem() {
+        copies--;
+    }
+
+    //    @Override
+//    public String toString() {
+//        String format="%-20s Title: %-20s Price: $%-4.2f Copies: %-2d";
+//        return String.format(format,this.getClass().getSimpleName(), title, price, copies);
+//
+//    }
+}
+```
+
+--- FILE: src\main\java\csd214_fall2025\pojos\SaleableItem.java ---
+```
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
+ */
+package csd214_fall2025.pojos;
+
+/**
+ *
+ * @author fcarella
+ */
+public interface SaleableItem {
+    public void sellItem();
+    public double getPrice();
+}
+
+```
+
+--- FILE: src\main\java\csd214_fall2025\pojos\Ticket.java ---
+```
+package csd214_fall2025.pojos;
+
+/**
+ * @author fcarella
+ */
+/**
+ * DTO for {@link csd214.bookstore.f25.entities.TicketEntity}
+ */
+public class Ticket extends Product {
+    private String description;
+    private double price;
+
+    public Ticket(String description, double price) {
+        this.description = description;
+        this.price = price;
+    }
+
+    public Ticket() {
+    }
+
+    public void setDescription(String description) {
+        this.description=description;
+    }
+    public String getDescription() {
+        return description;
+    }
+
+    @Override
+    public void sellItem() {
+        System.out.println(getDescription());
+    }
+
+    @Override
+    public double getPrice() {
+        return price;
+    }
+
+    /**
+     * @param price the price to set
+     */
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    @Override
+    public void edit() {
+        System.out.println("Edit ticket text");
+        setDescription(getInput(getDescription()));
+        System.out.println("Edit ticket price");
+        setPrice(getInput(getPrice()));
+    }
+
+    @Override
+    public void initialize() {
+        System.out.println("Enter ticket text");
+        setDescription(getInput(getDescription()));
+        System.out.println("Edit ticket price");
+        setPrice(getInput(getPrice()));
+    }
+    public String toString() {
+        String format = "%-20s Description: %-250s";
+        return String.format(format, this.getClass().getSimpleName(), getDescription());
+    }
+}
+```
+
+--- FILE: src\main\java\csd214_fall2025\repositories\repositories\H2ProductRepository.java ---
+```
+package csd214_fall2025.repositories;
+
+import csd214.bookstore.f25.entities.ProductEntity;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * A concrete implementation of the Repository interface that uses JPA and an H2 in-memory database.
+ * This repository handles the lifecycle of the EntityManager and transactions for each operation.
+ */
+public class H2ProductRepository implements Repository<ProductEntity> {
+
+    private final EntityManagerFactory emf;
+
+    /**
+     * Constructs the repository and initializes the EntityManagerFactory for the "h2" persistence unit.
+     */
+    public H2ProductRepository() {
+        // The name "h2" must match the persistence-unit name in persistence.xml
+        this.emf = Persistence.createEntityManagerFactory("h2");
+    }
+
+    @Override
+    public Optional<ProductEntity> findById(Long id) {
+        try (EntityManager em = emf.createEntityManager()) {
+            ProductEntity entity = em.find(ProductEntity.class, id);
+            return Optional.ofNullable(entity);
+        }
+    }
+
+    @Override
+    public List<ProductEntity> findAll() {
+        try (EntityManager em = emf.createEntityManager()) {
+            return em.createQuery("SELECT p FROM ProductEntity p", ProductEntity.class)
+                    .getResultList();
+        }
+    }
+
+    @Override
+    public ProductEntity save(ProductEntity entity) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            // Use merge for both creating and updating. It returns a managed instance.
+            ProductEntity savedEntity = em.merge(entity);
+            em.getTransaction().commit();
+            return savedEntity;
+        } finally {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            em.close();
+        }
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            // First, find the entity to ensure it's managed before trying to remove it.
+            ProductEntity entityToRemove = em.find(ProductEntity.class, id);
+            if (entityToRemove != null) {
+                em.remove(entityToRemove);
+            }
+            em.getTransaction().commit();
+        } finally {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            em.close();
+        }
+    }
+
+    /**
+     * Closes the EntityManagerFactory to release database connections and resources.
+     * This should be called when the application is shutting down.
+     */
+    public void close() {
+        if (emf != null && emf.isOpen()) {
+            emf.close();
+        }
+    }
+}
+```
+
+--- FILE: src\main\java\csd214_fall2025\repositories\repositories\InMemoryProductRepository.java ---
+```
+package csd214_fall2025.repositories;
+
+import csd214.bookstore.f25.entities.ProductEntity;
+
+import java.util.*;
+
+/**
+ * An in-memory implementation of the Repository interface for ProductEntity.
+ * This class uses a HashMap to store data and is primarily intended for
+ * testing and development purposes, allowing the business logic to be tested
+ * without a live database connection.
+ */
+public class InMemoryProductRepository implements Repository<ProductEntity> {
+
+    private final Map<Long, ProductEntity> products = new HashMap<>();
+    private Long nextId = 1L;
+
+    /**
+     * Retrieves a ProductEntity by its ID from the in-memory map.
+     *
+     * @param id The ID of the entity to find.
+     * @return an Optional containing the found entity, or an empty Optional if not found.
+     */
+    @Override
+    public Optional<ProductEntity> findById(Long id) {
+        // The .ofNullable() factory method conveniently handles cases where the product might not exist.
+        return Optional.ofNullable(products.get(id));
+    }
+
+    /**
+     * Retrieves all ProductEntity objects from the in-memory map.
+     *
+     * @return a List of all stored entities.
+     */
+    @Override
+    public List<ProductEntity> findAll() {
+        return new ArrayList<>(products.values());
+    }
+
+    /**
+     * Saves or updates a ProductEntity in the in-memory map.
+     * If the entity's ID is null, a new ID is generated and assigned.
+     *
+     * @param entity The entity to save or update.
+     * @return the saved entity with its ID assigned.
+     */
+    @Override
+    public ProductEntity save(ProductEntity entity) {
+        if (entity.getId() == null || entity.getId() == 0L) {
+            // This is a new entity, so we generate and set its ID.
+            entity.setId(nextId++);
+        }
+        // Add the new or updated entity to our map.
+        products.put(entity.getId(), entity);
+        return entity;
+    }
+
+    /**
+     * Deletes a ProductEntity by its ID from the in-memory map.
+     *
+     * @param id The ID of the entity to delete.
+     */
+    @Override
+    public void deleteById(Long id) {
+        products.remove(id);
+    }
+
+    /**
+     * Helper method for tests to clear all data from the repository.
+     */
+    public void clear() {
+        products.clear();
+        nextId = 1L;
+    }
+}
+```
+
+--- FILE: src\main\java\csd214_fall2025\repositories\repositories\MySQLProductRepository.java ---
+```
+package csd214_fall2025.repositories;
+
+import csd214.bookstore.f25.entities.ProductEntity;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * A concrete implementation of the Repository interface that uses JPA and a MySQL database.
+ * This repository is intended for production use, persisting data to a permanent database store.
+ * It handles the lifecycle of the EntityManager and transactions for each operation.
+ */
+public class MySQLProductRepository implements Repository<ProductEntity> {
+
+    private final EntityManagerFactory emf;
+
+    /**
+     * Constructs the repository and initializes the EntityManagerFactory for the "default"
+     * persistence unit, which is configured for the MySQL database.
+     */
+    public MySQLProductRepository() {
+        // The name "default" must match the persistence-unit name for MySQL in persistence.xml
+        this.emf = Persistence.createEntityManagerFactory("default");
+    }
+
+    @Override
+    public Optional<ProductEntity> findById(Long id) {
+        try (EntityManager em = emf.createEntityManager()) {
+            ProductEntity entity = em.find(ProductEntity.class, id);
+            return Optional.ofNullable(entity);
+        }
+    }
+
+    @Override
+    public List<ProductEntity> findAll() {
+        try (EntityManager em = emf.createEntityManager()) {
+            // This JPQL query is identical to the one used in the H2 repository.
+            return em.createQuery("SELECT p FROM ProductEntity p", ProductEntity.class)
+                    .getResultList();
+        }
+    }
+
+    @Override
+    public ProductEntity save(ProductEntity entity) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            // Merge handles both new entities (INSERT) and existing entities (UPDATE).
+            ProductEntity savedEntity = em.merge(entity);
+            em.getTransaction().commit();
+            return savedEntity;
+        } finally {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            em.close();
+        }
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            // Find the managed entity first before attempting to remove it.
+            ProductEntity entityToRemove = em.find(ProductEntity.class, id);
+            if (entityToRemove != null) {
+                em.remove(entityToRemove);
+            }
+            em.getTransaction().commit();
+        } finally {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            em.close();
+        }
+    }
+
+    /**
+     * Closes the EntityManagerFactory to release all database connections and resources.
+     * This is a crucial step for shutting down the application cleanly.
+     */
+    public void close() {
+        if (emf != null && emf.isOpen()) {
+            emf.close();
+        }
+    }
+}
+```
+
+--- FILE: src\main\java\csd214_fall2025\repositories\repositories\Repository.java ---
+```
+package csd214_fall2025.repositories;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * A generic repository interface that defines standard CRUD (Create, Read, Update, Delete) operations.
+ * This establishes a contract for data access layers, abstracting the underlying data source.
+ *
+ * @param <T> The entity type that this repository manages.
+ */
+public interface Repository<T> {
+
+    /**
+     * Retrieves an entity by its unique identifier.
+     *
+     * @param id The ID of the entity to find. Must not be null.
+     * @return an Optional containing the found entity, or an empty Optional if no entity is found.
+     */
+    Optional<T> findById(Long id);
+
+    /**
+     * Retrieves all entities of the specified type.
+     *
+     * @return a List containing all entities.
+     */
+    List<T> findAll();
+
+    /**
+     * Saves or updates a given entity. If the entity is new (has no ID), it will be created.
+     * If it has an ID, it will be updated.
+     *
+     * @param entity The entity to save or update. Must not be null.
+     * @return the saved entity, which may be a new instance with a generated ID.
+     */
+    T save(T entity);
+
+    /**
+     * Deletes an entity by its unique identifier.
+     *
+     * @param id The ID of the entity to delete. Must not be null.
+     */
+    void deleteById(Long id);
+}
+```
+
+--- FILE: src\main\java\csd214_fall2025\services\ProductService.java ---
+```
+package csd214_fall2025.services;
+
+import csd214_fall2025.entities.BookEntity;
+import csd214_fall2025.entities.ProductEntity;
+import csd214_fall2025.repositories.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * The Service Layer for handling product-related business logic.
+ * This class is completely decoupled from the data storage mechanism. It operates
+ * exclusively on the Repository<ProductEntity> interface, which is provided to it
+ * via its constructor (Dependency Injection).
+ */
+public class ProductService {
+
+    // The service depends on the repository abstraction, not a concrete implementation.
+    private final Repository<ProductEntity> productRepository;
+
+    /**
+     * Constructs the ProductService with a specific repository implementation.
+     * @param productRepository The data repository to be used (e.g., MySQL, H2, InMemory).
+     */
+    public ProductService(Repository<ProductEntity> productRepository) {
+        this.productRepository = productRepository;
+    }
+
+    /**
+     * Business logic to create and save a new book.
+     */
+    public BookEntity createBook(String title, double price, int copies, String isbn, String desc, String author) {
+        BookEntity newBook = new BookEntity(title, price, copies, isbn, desc, author);
+        // The service's job is to orchestrate. It asks the repository to save the object.
+        return (BookEntity) productRepository.save(newBook);
+    }
+
+    /**
+     * Business logic to create and save a new ticket.
+     */
+    public TicketEntity createTicket(String description, double price) {
+        TicketEntity newTicket = new TicketEntity();
+        newTicket.setDescription(description);
+        newTicket.setPrice(price);
+        return (TicketEntity) productRepository.save(newTicket);
+    }
+
+    /**
+     * Retrieves all products.
+     * @return A list of all products.
+     */
+    public List<ProductEntity> getAllProducts() {
+        return productRepository.findAll();
+    }
+
+    /**
+     * Finds a product by its ID.
+     * @param id The ID of the product.
+     * @return An Optional containing the product if found.
+     */
+    public Optional<ProductEntity> getProductById(Long id) {
+        return productRepository.findById(id);
+    }
+
+    /**
+     * Business logic to delete a product.
+     * @param id The ID of the product to delete.
+     */
+    public void deleteProduct(Long id) {
+        productRepository.deleteById(id);
+    }
+}
+```
+
+--- FILE: src\main\resources\META-INF\persistence.xml ---
+```
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
+
+    <!-- Your existing MySQL persistence unit -->
+    <persistence-unit name="default" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <properties>
+            <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/bookstore"/>
+            <property name="jakarta.persistence.jdbc.user" value="root"/>
+            <property name="jakarta.persistence.jdbc.password" value="itstudies12345"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
+<!--            <property name="hibernate.show_sql" value="true"/>-->
+<!--            <property name="hibernate.format_sql" value="true"/>-->
+        </properties>
+    </persistence-unit>
+
+    <!-- ADD THIS NEW H2 PERSISTENCE UNIT -->
+    <persistence-unit name="h2" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <properties>
+            <!-- H2 Driver -->
+            <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+            <!-- In-memory database URL. "mem:testdb" creates a private in-memory DB. -->
+            <!-- DB_CLOSE_DELAY=-1 prevents the DB from being cleared as long as the VM is alive. -->
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1"/>
+            <property name="jakarta.persistence.jdbc.user" value="sa"/>
+            <property name="jakarta.persistence.jdbc.password" value=""/>
+
+            <!-- H2 Dialect for Hibernate -->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+
+            <!-- Create and drop the schema on startup/shutdown. Perfect for testing. -->
+            <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+
+            <!-- Optional: Show SQL for debugging -->
+<!--            <property name="hibernate.show_sql" value="true"/>-->
+<!--            <property name="hibernate.format_sql" value="true"/>-->
+        </properties>
+    </persistence-unit>
+
+</persistence>
+<!--<?xml version="1.0" encoding="UTF-8" standalone="yes"?>-->
+<!--&lt;!&ndash; See https://www.theserverside.com/blog/Coffee-Talk-Java-News-Stories-and-Opinions/The-JPA-and-Hibernate-CRUD-operations-example&ndash;&gt;-->
+<!--<persistence version="3.0" xmlns="https://jakarta.ee/xml/ns/persistence"-->
+<!--             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"-->
+<!--             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence-->
+<!--            https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">-->
+
+<!--  <persistence-unit name="default">-->
+<!--    <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>-->
+<!--    <properties>-->
+<!--      <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver" />-->
+<!--      <property name="jakarta.persistence.jdbc.url"    value="jdbc:mysql://localhost:3307/bookstore" />-->
+<!--      <property name="jakarta.persistence.jdbc.user"   value="root" />-->
+<!--      <property name="jakarta.persistence.jdbc.password" value="itstudies12345" />-->
+<!--      <property name="jakarta.persistence.schema-generation.database.action" value="drop-and-create" />-->
+<!--&lt;!&ndash;      <property name="hibernate.show_sql"    value="true" />&ndash;&gt;-->
+<!--&lt;!&ndash;      <property name="hibernate.format_sql"  value="true" />&ndash;&gt;-->
+<!--    </properties>-->
+<!--  </persistence-unit>-->
+<!--</persistence>-->
+
+```
+

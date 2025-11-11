@@ -1,0 +1,43 @@
+.git/
+volumes/
+.mvn/
+
+*.json
+
+# Vite / NPM
+node_modules/
+dist/
+.vite/
+npm-debug.log*
+
+# IntelliJ IDEA files
+.idea/
+*.iml
+out/
+
+# Visual Studio Code files
+.vscode/
+
+# Maven build output
+target/
+mvnw
+mvnw.cmd
+
+# Log files
+*.log
+
+# OS files
+.DS_Store
+
+# Binary and non-code files
+*.png
+*.gif
+*.jpg
+*.jpeg
+*.bmp
+*.svg
+*.ico
+*.pdf
+*.zip
+*.jar
+*.class
