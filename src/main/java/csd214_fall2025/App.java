@@ -6,14 +6,12 @@ import csd214_fall2025.entities.ProductEntity;
 import csd214_fall2025.entities.TicketEntity;
 import csd214_fall2025.pojos.Editable;
 import csd214_fall2025.pojos.SaleableItem;
-import csd214_fall2025.repositories.InMemoryProductRepository;
 import csd214_fall2025.repositories.Repository;
 import csd214_fall2025.services.ProductService;
 
 
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -119,7 +117,45 @@ public class App {
         }
     }
     public void editItem(Editable item){}
-    public void deleteItem(){}
+    public void deleteItem(){
+        listAny(); // Show the user all available items
+        out.print("\nEnter the ID of the item to delete: ");
+        String idStr = input.nextLine();
+        long id;
+
+        try {
+            id = Long.parseLong(idStr);
+        } catch (NumberFormatException e) {
+            out.println("Invalid ID format. Please enter a number.");
+            return;
+        }
+
+        // Find the item first to confirm it exists before deleting
+        Optional<ProductEntity> productOpt = productService.getProductById(id);
+
+        if (productOpt.isPresent()) {
+            ProductEntity productToDelete = productOpt.get();
+            out.println("You are about to delete the following item:");
+            // Display item details for confirmation
+            if (productToDelete instanceof BookEntity book) {
+                out.printf(" -> ID: %d | Type: Book | Title: %s%n", book.getId(), book.getTitle());
+            } else if (productToDelete instanceof TicketEntity ticket) {
+                out.printf(" -> ID: %d | Type: Ticket | Description: %s%n", ticket.getId(), ticket.getDescription());
+            }
+
+            out.print("Are you sure you want to delete this item? (y/n): ");
+            String confirmation = input.nextLine();
+
+            if (confirmation.equalsIgnoreCase("y")) {
+                productService.deleteProduct(id);
+                out.println("Item with ID " + id + " was deleted successfully.");
+            } else {
+                out.println("Deletion canceled.");
+            }
+        } else {
+            out.println("Item with ID " + id + " not found.");
+        }
+    }
     public void populate(){
         out.println("\n--- Populating with initial data... ---");
 

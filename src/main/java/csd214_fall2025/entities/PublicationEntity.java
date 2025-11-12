@@ -11,7 +11,7 @@ public abstract class PublicationEntity extends ProductEntity {
     @Column(name = "price", nullable = false)
     private double price;
 
-    @Column(name = "copies", nullable = false)
+    @Column(name = "copies")
     private int copies;
 
     @Column(name = "isbn_10")
