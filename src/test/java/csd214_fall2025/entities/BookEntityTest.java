@@ -34,15 +34,6 @@ class BookEntityTest {
         System.setOut(originalSystemOut);
     }
 
-    /**
-     * Helper method to provide simulated user input for a test.
-     * @param data The string representing the user's input, with newlines separating each entry.
-     */
-    private void provideInput(String data) {
-        ByteArrayInputStream testInput = new ByteArrayInputStream(data.getBytes());
-        System.setIn(testInput);
-    }
-
     @Test
     @DisplayName("Should set and get author correctly")
     void testGetAndSetAuthor() {
@@ -63,13 +54,15 @@ class BookEntityTest {
                 + "14.99\n"                 // Price
                 + "10\n";                   // Copies
 
-        provideInput(simulatedInput);
-
-        // 2. Create the book and call the method to be tested
+        // 2. Create the book and set its input stream
         BookEntity book = new BookEntity();
+        ByteArrayInputStream testIn = new ByteArrayInputStream(simulatedInput.getBytes());
+        book.setSystemInput(testIn); // This correctly sets System.in AND re-initializes the book's scanner
+
+        // 3. Call the method to be tested
         book.initialize();
 
-        // 3. Assert that the book's properties match the input
+        // 4. Assert that the book's properties match the input
         assertEquals("The Hobbit", book.getTitle());
         assertEquals("J.R.R. Tolkien", book.getAuthor());
         assertEquals("978-0345339683", book.getIsbn_10());
@@ -85,24 +78,26 @@ class BookEntityTest {
         BookEntity book = new BookEntity("Dune", 17.99, 8, "978-0441013593", "Sci-fi classic.", "Frank Herbert");
         book.setId(1L); // Set an ID to simulate an existing item
 
-        // 2. Prepare simulated input: update title and copies, but keep author and price the same (empty input)
+        // 2. Prepare simulated input: update title and price, but keep author and copies the same (empty input)
         String simulatedInput = "Dune Messiah\n" // New Title
                 + "\n"               // Keep Author (empty input)
                 + "20.50\n"          // New Price
                 + "\n";              // Keep Copies
 
-        provideInput(simulatedInput);
+        // 3. Set the input stream for the book object
+        ByteArrayInputStream testIn = new ByteArrayInputStream(simulatedInput.getBytes());
+        book.setSystemInput(testIn); // Re-initialize the scanner with our test input
 
-        // 3. Call the method to be tested
+        // 4. Call the method to be tested
         book.edit();
 
-        // 4. Assert that the properties have been updated correctly
+        // 5. Assert that the properties have been updated correctly
         assertEquals("Dune Messiah", book.getTitle(), "Title should be updated.");
         assertEquals("Frank Herbert", book.getAuthor(), "Author should remain unchanged.");
         assertEquals(20.50, book.getPrice(), "Price should be updated.");
         assertEquals(8, book.getCopies(), "Copies should remain unchanged.");
 
-        // 5. Assert that the output prompts were displayed correctly
+        // 6. Assert that the output prompts were displayed correctly
         String output = testOutput.toString();
         assertTrue(output.contains("--- Editing Book 'Dune' (ID: 1) ---"));
         assertTrue(output.contains("Enter new title (current: 'Dune'):"));
@@ -135,8 +130,6 @@ class BookEntityTest {
         assertTrue(testOutput.toString().contains("Book 'Animal Farm' is out of stock."));
     }
 
-// ... inside the testEqualsAndHashCode method ...
-
     @Test
     @DisplayName("equals() and hashCode() should be consistent")
     void testEqualsAndHashCode() {
@@ -150,7 +143,6 @@ class BookEntityTest {
 
         // Test for inequality
         assertNotEquals(book1, book3, "Two books with different properties should not be equal.");
-        // FIX: The line below originally had book.hashCode() instead of book3.hashCode()
         assertNotEquals(book1.hashCode(), book3.hashCode(), "Hash codes should ideally be different for non-equal objects.");
     }
 }

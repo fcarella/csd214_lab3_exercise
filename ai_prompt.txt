@@ -54,7 +54,7 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-
+volumes/
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml
@@ -92,8 +92,6 @@ build/
 
 --- FILE: docker-compose.yml ---
 ```
-version: '3.8'
-
 services:
   db:
     image: mysql:8.0 # You can specify a different version if needed
@@ -125,7 +123,7 @@ volumes:
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>csd214</groupId>
-    <artifactId>lab3_exercise</artifactId>
+    <artifactId>csd214_lab3_exercise</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
@@ -212,7 +210,395 @@ volumes:
 </project>
 ```
 
+--- FILE: README.md ---
+```
+# CSD214 Lab 3 Exercise
+## Bookstore Inventory Management System
+
+This project is a console-based inventory management application for a bookstore. It is built using Java and Maven, and it demonstrates a clean, multi-layered architecture that separates concerns for maintainability and scalability.
+
+The application allows users to manage different types of saleable items, such as books and tickets, and supports multiple data storage options (in-memory and MySQL) that can be selected at runtime.
+
+## Features
+
+-   **Add Items**: Add new books or tickets to the inventory.
+-   **Edit Items**: Modify the details of existing items using their ID.
+-   **List Items**: Display a formatted list of all items currently in the inventory.
+-   **Dynamic Data Source**: Choose between a temporary in-memory database or a persistent MySQL database at startup.
+-   **Data Population**: Automatically populate the in-memory database with sample data for demonstration.
+
+*(Note: "Delete Items" and "Sell Items" are menu options but are not yet implemented.)*
+
+## Architectural Highlights
+
+This project was designed to showcase modern software development best practices:
+
+-   **Layered Architecture**: The code is organized into distinct layers:
+    -   **Entities (`entities`)**: JPA-annotated classes that map to database tables.
+    -   **POJOs/DTOs (`pojos`)**: Plain Old Java Objects used for data transfer, decoupling the business logic from the database schema.
+    -   **Repository Layer (`repositories`)**: Implements the Repository Pattern to abstract data access, making the application independent of the database technology.
+    -   **Service Layer (`services`)**: Contains the core business logic, orchestrating calls to the repository layer.
+-   **Dependency Injection (DI)**: The application's entry point (`Main.java`) acts as the "Composition Root," creating and injecting the necessary dependencies (like the chosen repository and the service) into the main `App` class.
+-   **JPA & Hibernate**: Object-Relational Mapping (ORM) is managed by Hibernate through the Jakarta Persistence API (JPA), simplifying database interactions.
+-   **Dual Persistence Units**: The `persistence.xml` file is configured with two separate persistence units:
+    -   `default`: For the persistent MySQL database (`hibernate.hbm2ddl.auto="update"`).
+    -   `h2`: For the temporary in-memory database (`hibernate.hbm2ddl.auto="create-drop"`), perfect for testing and development.
+
+## Technologies Used
+
+-   **Language**: Java 23
+-   **Build Tool**: Apache Maven
+-   **Database ORM**: JPA / Hibernate
+-   **Databases**:
+    -   MySQL (for persistent storage)
+    -   H2 (for in-memory storage)
+-   **Containerization**: Docker and Docker Compose (for running MySQL)
+-   **Testing**: JUnit 5
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed on your system:
+-   Java Development Kit (JDK) 21 or newer
+-   Apache Maven
+-   Docker and Docker Compose (recommended for the database setup)
+
+## How to Run
+
+Follow these steps to get the application running.
+
+### 1. Set Up the Database (Using Docker)
+
+The easiest way to run the required MySQL database is with Docker.
+
+1.  Open a terminal in the project's root directory (where `docker-compose.yml` is located).
+2.  Run the following command to start the MySQL container in the background:
+    ```sh
+    docker-compose up -d
+    ```
+    This will start a MySQL 8.0 server on your local machine.
+
+### 2. Verify Database Configuration
+
+The application is pre-configured to connect to the Docker container. You can verify the settings in `src/main/resources/META-INF/persistence.xml`.
+
+-   **URL**: `jdbc:mysql://localhost:3333/csd214-lab0`
+-   **Username**: `csd214`
+-   **Password**: `itstudies12345`
+
+The `docker-compose.yml` file maps port `3333` on your host machine to port `3306` inside the container. The `persistence.xml` should connect to `localhost:3333`.
+
+*(Note: The database name in `docker-compose.yml` is `csd214-lab0`, but `persistence.xml` points to `bookstore`. For it to work, change the database URL in `persistence.xml` to `jdbc:mysql://localhost:3333/csd214-lab0` or update the `MYSQL_DATABASE` value in `docker-compose.yml` to `bookstore` before running `docker-compose up`.)*
+
+### 3. Build and Run the Application
+
+1.  Use Maven to build the project and install dependencies:
+    ```sh
+    mvn clean install
+    ```
+2.  Run the application using the Maven exec plugin:
+    ```sh
+    mvn exec:java -Dexec.mainClass="csd214_fall2025.Main"
+    ```
+3.  When the application starts, you will be prompted to choose a repository.
+    -   Enter `1` to use the **In-Memory** repository. The data will be populated with samples but will be lost when the app closes.
+    -   Enter `2` to use the **MySQL** repository. The data will be saved permanently in the database.
+
+## Project Structure
+
+```
+├── pom.xml                 # Maven build configuration
+├── docker-compose.yml      # Docker configuration for MySQL
+└── src
+    ├── main
+    │   ├── java
+    │   │   └── csd214_fall2025
+    │   │       ├── App.java            # Main application loop and UI logic
+    │   │       ├── Main.java           # Application entry point (composition root)
+    │   │       ├── entities            # JPA entity classes (BookEntity, etc.)
+    │   │       ├── pojos               # DTOs and business objects (Book, Ticket, etc.)
+    │   │       ├── repositories        # Data access layer (Repository pattern interfaces and implementations)
+    │   │       └── services            # Business logic layer (ProductService)
+    │   └── resources
+    │       └── META-INF
+    │           └── persistence.xml     # JPA/Hibernate configuration
+    └── test
+        └── java                        # (Test source files would go here)
+```
+```
+
 --- FILE: src\main\java\csd214_fall2025\App.java ---
+```
+package csd214_fall2025;
+
+
+import csd214_fall2025.entities.BookEntity;
+import csd214_fall2025.entities.ProductEntity;
+import csd214_fall2025.entities.TicketEntity;
+import csd214_fall2025.pojos.Editable;
+import csd214_fall2025.pojos.SaleableItem;
+import csd214_fall2025.repositories.Repository;
+import csd214_fall2025.services.ProductService;
+
+
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.util.List;
+import java.util.Optional;
+import java.util.Scanner;
+
+
+public class App {
+    private final String menu = "\n***********************\n"
+            + " 1. Add Items\n"
+            + " 2. Edit Items\n"
+            + " 3. Delete Items\n"
+            + " 4. Sell item(s)\n"
+            + " 5. List items\n"
+            + "99. Quit\n"
+            + "***********************\n"
+            + "Enter choice: ";
+
+    private final int currentItem = 0;
+
+
+    private final Scanner input;
+    private final PrintStream out;
+    private final ProductService productService;
+
+
+    /**
+     * Constructs the App with all its required dependencies.
+     * @param in The input stream for user interaction (e.g., System.in).
+     * @param out The output stream for displaying information (e.g., System.out).
+     * @param productService The service that handles business logic.
+     */
+    public App(InputStream in, PrintStream out, ProductService productService) {
+        this.input = new Scanner(in);
+        this.out = out;
+        this.productService = productService;
+    }
+
+
+    public void run() {
+        while (true) {
+            out.print(menu);
+            String choiceStr = input.nextLine();
+            int choice;
+
+            try {
+                choice = Integer.parseInt(choiceStr);
+            } catch (NumberFormatException e) {
+                out.println("Invalid input. Please enter a number.");
+                continue;
+            }
+
+            switch (choice) {
+                case 1:
+                    addItem();
+                    break;
+                case 2:
+                    editItem();
+                    break;
+                case 3:
+                    deleteItem();
+                    break;
+                case 4:
+                    sellItem();
+                    break;
+                case 5:
+                    listAny();
+                    break;
+                case 99:
+                    out.println("Exiting application. Goodbye!");
+                    return; // Exit the run method
+                default:
+                    out.println("Invalid choice, please try again.");
+            }
+        }
+    }
+    public boolean findItemExists(SaleableItem item){return false;};
+    public SaleableItem findItem(SaleableItem item){return null;}
+    public void editItem(){
+        listAny(); // Show the user the items they can edit
+        out.print("\nEnter the ID of the item to edit: ");
+        String idStr = input.nextLine();
+        long id;
+
+        try {
+            id = Long.parseLong(idStr);
+        } catch (NumberFormatException e) {
+            out.println("Invalid ID format. Please enter a number.");
+            return;
+        }
+
+        Optional<ProductEntity> productOpt = productService.getProductById(id);
+
+        if (productOpt.isPresent()) {
+            ProductEntity productToEdit = productOpt.get();
+
+            // Delegate the editing process to the object itself
+            productToEdit.edit();
+
+            // Save the updated object back to the repository
+            productService.saveProduct(productToEdit);
+            out.println("Item with ID " + id + " updated successfully.");
+        } else {
+            out.println("Item with ID " + id + " not found.");
+        }
+    }
+    public void editItem(Editable item){}
+    public void deleteItem(){
+        listAny(); // Show the user all available items
+        out.print("\nEnter the ID of the item to delete: ");
+        String idStr = input.nextLine();
+        long id;
+
+        try {
+            id = Long.parseLong(idStr);
+        } catch (NumberFormatException e) {
+            out.println("Invalid ID format. Please enter a number.");
+            return;
+        }
+
+        // Find the item first to confirm it exists before deleting
+        Optional<ProductEntity> productOpt = productService.getProductById(id);
+
+        if (productOpt.isPresent()) {
+            ProductEntity productToDelete = productOpt.get();
+            out.println("You are about to delete the following item:");
+            // Display item details for confirmation
+            if (productToDelete instanceof BookEntity book) {
+                out.printf(" -> ID: %d | Type: Book | Title: %s%n", book.getId(), book.getTitle());
+            } else if (productToDelete instanceof TicketEntity ticket) {
+                out.printf(" -> ID: %d | Type: Ticket | Description: %s%n", ticket.getId(), ticket.getDescription());
+            }
+
+            out.print("Are you sure you want to delete this item? (y/n): ");
+            String confirmation = input.nextLine();
+
+            if (confirmation.equalsIgnoreCase("y")) {
+                productService.deleteProduct(id);
+                out.println("Item with ID " + id + " was deleted successfully.");
+            } else {
+                out.println("Deletion canceled.");
+            }
+        } else {
+            out.println("Item with ID " + id + " not found.");
+        }
+    }
+    public void populate(){
+        out.println("\n--- Populating with initial data... ---");
+
+        // Create 3 Books
+        productService.createBook("The Hobbit", 14.99, 10, "978-0345339683", "A classic fantasy novel.", "J.R.R. Tolkien");
+        productService.createBook("1984", 9.99, 15, "978-0451524935", "A dystopian social science fiction novel.", "George Orwell");
+        productService.createBook("Dune", 17.99, 8, "978-0441013593", "A landmark science fiction novel.", "Frank Herbert");
+
+        // Create 3 Tickets
+        productService.createTicket("Concert Ticket - The Rockers", 75.50);
+        productService.createTicket("Movie Premiere - Space Odyssey 2", 25.00);
+        productService.createTicket("Museum Entry - Natural History", 30.00);
+
+        out.println("--- Population complete. ---");
+    }
+    public void listAny(){
+        out.println("\n--- All Items in Inventory ---");
+        List<ProductEntity> products = productService.getAllProducts();
+
+        if (products.isEmpty()) {
+            out.println("No items found.");
+        } else {
+            for (ProductEntity product : products) {
+                if (product instanceof BookEntity book) {
+                    out.printf("ID: %d | Type: Book   | Title: %s | Author: %s | Price: $%.2f | Copies: %d%n",
+                            book.getId(), book.getTitle(), book.getAuthor(), book.getPrice(), book.getCopies());
+                } else if (product instanceof TicketEntity ticket) {
+                    out.printf("ID: %d | Type: Ticket | Description: %s | Price: $%.2f%n",
+                            ticket.getId(), ticket.getDescription(), ticket.getPrice());
+                } else {
+                    // Fallback for any other product types
+                    out.println(product.toString());
+                }
+            }
+        }
+        out.println("------------------------------");
+    }
+    public SaleableItem getItem(SaleableItem item){return null;}
+    public void sellItem(){}
+    public void listI(Object items){}
+
+    public void addItem() {
+        out.println("\n--- Add New Item ---");
+        out.println("1. Book");
+        out.println("2. Ticket");
+        out.print("Enter choice: ");
+        String choiceStr = input.nextLine();
+        int choice;
+
+        try {
+            choice = Integer.parseInt(choiceStr);
+        } catch (NumberFormatException e) {
+            out.println("Invalid choice. Please enter a number.");
+            return;
+        }
+
+        try {
+            switch (choice) {
+                case 1:
+                    addBook();
+                    break;
+                case 2:
+                    addTicket();
+                    break;
+                default:
+                    out.println("Invalid choice. Returning to main menu.");
+            }
+        } catch (Exception e) {
+            out.println("An error occurred while adding the item: " + e.getMessage());
+            out.println("Please try again.");
+        }
+    }
+
+    private void addBook() {
+        BookEntity newBook = new BookEntity();
+        newBook.initialize(); // This method will prompt the user for all details
+
+        // The entity is now populated, save it using the service
+        ProductEntity savedBook = productService.saveProduct(newBook);
+        out.println("Book added successfully with ID: " + savedBook.getId());
+    }
+
+    private void addTicket() {
+        out.println("\n--- Enter New Ticket Details ---");
+
+        out.print("Enter description: ");
+        String ticketDesc = input.nextLine();
+
+        double ticketPrice = 0;
+        while (true) {
+            try {
+                out.print("Enter price: ");
+                ticketPrice = Double.parseDouble(input.nextLine());
+                if (ticketPrice < 0) {
+                    out.println("Price cannot be negative.");
+                    continue;
+                }
+                break;
+            } catch (NumberFormatException e) {
+                out.println("Invalid price. Please enter a valid number (e.g., 25.50).");
+            }
+        }
+
+        TicketEntity savedTicket = productService.createTicket(ticketDesc, ticketPrice);
+        out.println("Ticket added successfully with ID: " + savedTicket.getId());
+    }
+    public void addItem(SaleableItem item){}
+
+
+}
+```
+
+--- FILE: src\main\java\csd214_fall2025\App_bu.java ---
 ```
 package csd214_fall2025;
 
@@ -221,10 +607,9 @@ import csd214_fall2025.pojos.SaleableItem;
 
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.Scanner;
 
-public class App {
+public class App_bu {
     private final String menu = "\n***********************\n"
             + " 1. Add Items\n"
             + " 2. Edit Items\n"
@@ -242,11 +627,11 @@ public class App {
     private final PrintStream out;
 
     // Default constructor for normal execution
-    public App() {
+    public App_bu() {
         this(System.in, System.out);
     }
     // Constructor for testing
-    public App(InputStream in, PrintStream out) {
+    public App_bu(InputStream in, PrintStream out) {
         this.input = new Scanner(in);
         this.out = out;
     }
@@ -273,30 +658,43 @@ public class App {
 ```
 package csd214_fall2025.entities;
 
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 
+
 import java.util.Objects;
+
 
 @Entity
 public class BookEntity extends PublicationEntity {
     @Column(name = "author")
     private String author;
 
+
     public String getAuthor() {
         return author;
     }
+
 
     public void setAuthor(String author) {
         this.author = author;
     }
 
+
     public BookEntity() {
     }
+
 
     public BookEntity(String title, double price, int copies, String isbn_10, String description) {
         super(title, price, copies, isbn_10, description);
     }
+
+    public BookEntity(String title, double price, int copies, String isbn_10, String description, String author) {
+        super(title, price, copies, isbn_10, description);
+        this.author = author;
+    }
+
 
     @Override
     public boolean equals(Object o) {
@@ -305,10 +703,12 @@ public class BookEntity extends PublicationEntity {
         return Objects.equals(getAuthor(), that.getAuthor());
     }
 
+
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), getAuthor());
     }
+
 
     @Override
     public void edit() {
@@ -316,11 +716,14 @@ public class BookEntity extends PublicationEntity {
         System.out.print("Enter new title (current: '" + (getTitle() == null ? "" : getTitle()) + "'): ");
         setTitle(super.getInput(getTitle() == null ? "" : getTitle()));
 
+
         System.out.print("Enter new author (current: '" + (this.author == null ? "" : this.author) + "'): ");
         setAuthor(super.getInput(this.author == null ? "" : this.author));
 
+
         System.out.print("Enter new price (current: " + getPrice() + "): ");
         setPrice(super.getInput(getPrice()));
+
 
         System.out.print("Enter new copies (current: " + getCopies() + "): ");
         setCopies(super.getInput(getCopies()));
@@ -328,19 +731,23 @@ public class BookEntity extends PublicationEntity {
     }
 
 
+
+
     @Override
     public void initialize() {
         System.out.println("--- Initializing New Book ---");
-        // ID is typically set by persistence layer or later, not usually during manual initialize
-        // If you want to set ID here:
-        // System.out.print("Enter ID (long): ");
-        // setId(super.getInput(0L)); // Example default for ID
 
         System.out.print("Enter title: ");
         setTitle(super.getInput("")); // Default empty string
 
         System.out.print("Enter author: ");
         setAuthor(super.getInput("")); // Default empty string
+
+        System.out.print("Enter ISBN-10: ");
+        setIsbn_10(super.getInput(""));
+
+        System.out.print("Enter description: ");
+        setDescription(super.getInput(""));
 
         System.out.print("Enter price: ");
         setPrice(super.getInput(0.0)); // Default 0.0
@@ -349,6 +756,7 @@ public class BookEntity extends PublicationEntity {
         setCopies(super.getInput(0)); // Default 0
         System.out.println("Book initialized.");
     }
+
 
     @Override
     public void sellItem() {
@@ -365,6 +773,7 @@ public class BookEntity extends PublicationEntity {
                 "author='" + author + '\'' +
                 "} " + super.toString();
     }
+
 
 }
 ```
@@ -450,7 +859,7 @@ public abstract class PublicationEntity extends ProductEntity {
     @Column(name = "price", nullable = false)
     private double price;
 
-    @Column(name = "copies", nullable = false)
+    @Column(name = "copies")
     private int copies;
 
     @Column(name = "isbn_10")
@@ -524,15 +933,154 @@ public abstract class PublicationEntity extends ProductEntity {
 }
 ```
 
+--- FILE: src\main\java\csd214_fall2025\entities\TicketEntity.java ---
+```
+package csd214_fall2025.entities;
+
+import jakarta.persistence.Entity;
+import java.util.Objects;
+
+@Entity
+public class TicketEntity extends ProductEntity {
+    private String description;
+    private double price;
+
+    public TicketEntity() {}
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @Override
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    @Override
+    public void edit() {
+        System.out.println("--- Editing Ticket " + (getId() != null ? " (ID: " + getId() + ")" : "") + " ---");
+        System.out.print("Enter new description (current: '" + (this.description == null ? "" : this.description) + "'): ");
+        setDescription(super.getInput(this.description == null ? "" : this.description));
+        System.out.print("Enter new price (current: " + getPrice() + "): ");
+        setPrice(super.getInput(getPrice()));
+        System.out.println("Ticket updated.");
+    }
+
+    @Override
+    public void initialize() {
+        System.out.println("--- Initializing New Ticket ---");
+        System.out.print("Enter description: ");
+        setDescription(super.getInput(""));
+        System.out.print("Enter price: ");
+        setPrice(super.getInput(0.0));
+        System.out.println("Ticket initialized.");
+    }
+
+    @Override
+    public void sellItem() {
+        // Tickets are typically single-use, so there are no "copies" to decrement.
+        System.out.println("Sold Ticket: '" + getDescription() + "'.");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof TicketEntity that)) return false;
+        if (!super.equals(o)) return false;
+        return Double.compare(that.getPrice(), getPrice()) == 0 && Objects.equals(getDescription(), that.getDescription());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getDescription(), getPrice());
+    }
+
+    @Override
+    public String toString() {
+        return "TicketEntity{" +
+                "description='" + description + '\'' +
+                ", price=" + price +
+                "} " + super.toString();
+    }
+}
+```
+
 --- FILE: src\main\java\csd214_fall2025\Main.java ---
 ```
 package csd214_fall2025;
+
+
+import csd214_fall2025.entities.ProductEntity;
+import csd214_fall2025.repositories.InMemoryProductRepository;
+import csd214_fall2025.repositories.MySQLProductRepository;
+import csd214_fall2025.repositories.Repository;
+import csd214_fall2025.services.ProductService;
+
+import java.util.Scanner;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
     public static void main(String[] args) {
-        new App().run();
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Select the repository to use:");
+        System.out.println("1. In-Memory (data is temporary, resets on restart)");
+        System.out.println("2. MySQL (data is persistent)");
+        System.out.print("Enter choice: ");
+
+        String choice = scanner.nextLine();
+        Repository<ProductEntity> repository = null;
+
+        switch (choice) {
+            case "1":
+                repository = new InMemoryProductRepository();
+                System.out.println("Using In-Memory repository.");
+                break;
+            case "2":
+                try {
+                    repository = new MySQLProductRepository();
+                    System.out.println("Using MySQL repository.");
+                } catch (Exception e) {
+                    System.out.println("Error connecting to MySQL database: " + e.getMessage());
+                    System.out.println("Please ensure the database is running and configured correctly in persistence.xml.");
+                    return; // Exit if DB connection fails
+                }
+                break;
+            default:
+                System.out.println("Invalid choice. Exiting application.");
+                return;
+        }
+
+        try {
+            // 1. Create the service with the selected repository
+            ProductService productService = new ProductService(repository);
+
+            // 2. Create the App, injecting the service
+            App app = new App(System.in, System.out, productService);
+
+            // 3. Populate with data ONLY if using the in-memory repository
+            if (repository instanceof InMemoryProductRepository) {
+                app.populate();
+            }
+
+            // 4. Run the application
+            app.run();
+
+        } finally {
+            // 5. When the app is finished, close the repository resources
+            if (repository != null) {
+                repository.close();
+                System.out.println("\nRepository resources have been released. Application terminated.");
+            }
+        }
     }
 }
 ```
@@ -1136,17 +1684,20 @@ public class Ticket extends Product {
 }
 ```
 
---- FILE: src\main\java\csd214_fall2025\repositories\repositories\H2ProductRepository.java ---
+--- FILE: src\main\java\csd214_fall2025\repositories\H2ProductRepository.java ---
 ```
 package csd214_fall2025.repositories;
 
-import csd214.bookstore.f25.entities.ProductEntity;
+
+import csd214_fall2025.entities.ProductEntity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 
+
 import java.util.List;
 import java.util.Optional;
+
 
 /**
  * A concrete implementation of the Repository interface that uses JPA and an H2 in-memory database.
@@ -1154,7 +1705,9 @@ import java.util.Optional;
  */
 public class H2ProductRepository implements Repository<ProductEntity> {
 
+
     private final EntityManagerFactory emf;
+
 
     /**
      * Constructs the repository and initializes the EntityManagerFactory for the "h2" persistence unit.
@@ -1164,6 +1717,7 @@ public class H2ProductRepository implements Repository<ProductEntity> {
         this.emf = Persistence.createEntityManagerFactory("h2");
     }
 
+
     @Override
     public Optional<ProductEntity> findById(Long id) {
         try (EntityManager em = emf.createEntityManager()) {
@@ -1172,6 +1726,7 @@ public class H2ProductRepository implements Repository<ProductEntity> {
         }
     }
 
+
     @Override
     public List<ProductEntity> findAll() {
         try (EntityManager em = emf.createEntityManager()) {
@@ -1179,6 +1734,7 @@ public class H2ProductRepository implements Repository<ProductEntity> {
                     .getResultList();
         }
     }
+
 
     @Override
     public ProductEntity save(ProductEntity entity) {
@@ -1196,6 +1752,7 @@ public class H2ProductRepository implements Repository<ProductEntity> {
             em.close();
         }
     }
+
 
     @Override
     public void deleteById(Long id) {
@@ -1216,10 +1773,12 @@ public class H2ProductRepository implements Repository<ProductEntity> {
         }
     }
 
+
     /**
      * Closes the EntityManagerFactory to release database connections and resources.
      * This should be called when the application is shutting down.
      */
+    @Override
     public void close() {
         if (emf != null && emf.isOpen()) {
             emf.close();
@@ -1228,11 +1787,12 @@ public class H2ProductRepository implements Repository<ProductEntity> {
 }
 ```
 
---- FILE: src\main\java\csd214_fall2025\repositories\repositories\InMemoryProductRepository.java ---
+--- FILE: src\main\java\csd214_fall2025\repositories\InMemoryProductRepository.java ---
 ```
 package csd214_fall2025.repositories;
 
-import csd214.bookstore.f25.entities.ProductEntity;
+
+import csd214_fall2025.entities.ProductEntity;
 
 import java.util.*;
 
@@ -1307,17 +1867,20 @@ public class InMemoryProductRepository implements Repository<ProductEntity> {
 }
 ```
 
---- FILE: src\main\java\csd214_fall2025\repositories\repositories\MySQLProductRepository.java ---
+--- FILE: src\main\java\csd214_fall2025\repositories\MySQLProductRepository.java ---
 ```
 package csd214_fall2025.repositories;
 
-import csd214.bookstore.f25.entities.ProductEntity;
+
+import csd214_fall2025.entities.ProductEntity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 
+
 import java.util.List;
 import java.util.Optional;
+
 
 /**
  * A concrete implementation of the Repository interface that uses JPA and a MySQL database.
@@ -1326,7 +1889,9 @@ import java.util.Optional;
  */
 public class MySQLProductRepository implements Repository<ProductEntity> {
 
+
     private final EntityManagerFactory emf;
+
 
     /**
      * Constructs the repository and initializes the EntityManagerFactory for the "default"
@@ -1337,6 +1902,7 @@ public class MySQLProductRepository implements Repository<ProductEntity> {
         this.emf = Persistence.createEntityManagerFactory("default");
     }
 
+
     @Override
     public Optional<ProductEntity> findById(Long id) {
         try (EntityManager em = emf.createEntityManager()) {
@@ -1344,6 +1910,7 @@ public class MySQLProductRepository implements Repository<ProductEntity> {
             return Optional.ofNullable(entity);
         }
     }
+
 
     @Override
     public List<ProductEntity> findAll() {
@@ -1353,6 +1920,7 @@ public class MySQLProductRepository implements Repository<ProductEntity> {
                     .getResultList();
         }
     }
+
 
     @Override
     public ProductEntity save(ProductEntity entity) {
@@ -1370,6 +1938,7 @@ public class MySQLProductRepository implements Repository<ProductEntity> {
             em.close();
         }
     }
+
 
     @Override
     public void deleteById(Long id) {
@@ -1390,10 +1959,12 @@ public class MySQLProductRepository implements Repository<ProductEntity> {
         }
     }
 
+
     /**
      * Closes the EntityManagerFactory to release all database connections and resources.
      * This is a crucial step for shutting down the application cleanly.
      */
+    @Override
     public void close() {
         if (emf != null && emf.isOpen()) {
             emf.close();
@@ -1402,7 +1973,7 @@ public class MySQLProductRepository implements Repository<ProductEntity> {
 }
 ```
 
---- FILE: src\main\java\csd214_fall2025\repositories\repositories\Repository.java ---
+--- FILE: src\main\java\csd214_fall2025\repositories\Repository.java ---
 ```
 package csd214_fall2025.repositories;
 
@@ -1447,6 +2018,12 @@ public interface Repository<T> {
      * @param id The ID of the entity to delete. Must not be null.
      */
     void deleteById(Long id);
+
+    /**
+     * Closes any underlying resources used by the repository, such as a database connection pool.
+     * The default implementation does nothing, so only repositories that need cleanup need to implement it.
+     */
+    default void close() {}
 }
 ```
 
@@ -1454,12 +2031,16 @@ public interface Repository<T> {
 ```
 package csd214_fall2025.services;
 
+
 import csd214_fall2025.entities.BookEntity;
 import csd214_fall2025.entities.ProductEntity;
+import csd214_fall2025.entities.TicketEntity;
 import csd214_fall2025.repositories.Repository;
+
 
 import java.util.List;
 import java.util.Optional;
+
 
 /**
  * The Service Layer for handling product-related business logic.
@@ -1469,8 +2050,10 @@ import java.util.Optional;
  */
 public class ProductService {
 
+
     // The service depends on the repository abstraction, not a concrete implementation.
     private final Repository<ProductEntity> productRepository;
+
 
     /**
      * Constructs the ProductService with a specific repository implementation.
@@ -1480,6 +2063,7 @@ public class ProductService {
         this.productRepository = productRepository;
     }
 
+
     /**
      * Business logic to create and save a new book.
      */
@@ -1488,6 +2072,7 @@ public class ProductService {
         // The service's job is to orchestrate. It asks the repository to save the object.
         return (BookEntity) productRepository.save(newBook);
     }
+
 
     /**
      * Business logic to create and save a new ticket.
@@ -1500,12 +2085,24 @@ public class ProductService {
     }
 
     /**
+     * Saves a given product entity.
+     * @param entity The entity to save.
+     * @return The saved entity.
+     */
+    public ProductEntity saveProduct(ProductEntity entity) {
+        // The service's job is to orchestrate. It asks the repository to save the object.
+        return productRepository.save(entity);
+    }
+
+
+    /**
      * Retrieves all products.
      * @return A list of all products.
      */
     public List<ProductEntity> getAllProducts() {
         return productRepository.findAll();
     }
+
 
     /**
      * Finds a product by its ID.
@@ -1515,6 +2112,7 @@ public class ProductService {
     public Optional<ProductEntity> getProductById(Long id) {
         return productRepository.findById(id);
     }
+
 
     /**
      * Business logic to delete a product.
@@ -1539,7 +2137,7 @@ public class ProductService {
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <properties>
             <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
-            <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/bookstore"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://localhost:3333/bookstore"/>
             <property name="jakarta.persistence.jdbc.user" value="root"/>
             <property name="jakarta.persistence.jdbc.password" value="itstudies12345"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>
